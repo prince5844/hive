@@ -1,0 +1,144 @@
+cd /usr/lib/hive
+ls
+cd conf
+ls
+gedit hive-site.xml
+ctrl+c
+cd
+sudo hive
+to quit-->quit;
+show databases;
+create database test3;
+or
+create database if not exists test3;
+use test3;
+describe database test3;
+and there will be one url.
+in namenode under user link we can see hive and under that hive
+test3 db will be created.
+
+default warehose folder is 
+/user/hive/warehouse.If we want to change it , then in
+hive-site.xml we should mention it in
+hive.metastore.warehouse.dir property.
+
+** Now we will create a table and load data from local file system.
+
+**metadata--->derby
+**actualdata--->hdfs
+
+**run hadoop commands from local file system:--
+sudo hive -e "select * from dbname.tablename"
+
+
+** Load data from hdfs to managed(internal )table
+** 
+
+
+Commands:--
+cd /Desktop
+mkdir hive1
+cd hive1
+gedit h1.txt
+sudo hive
+use test3;
+>create table emp(name string,salary float,dept string)
+>row format delimited
+>fields terminated by ',';
+>load data local inpath 'h1.txt' into table emp;
+>select * from emp;
+>describe emp;
+>describe extended emp;
+
+** create another file h2.txt in same local dir
+then load it into emp table
+load data local inpath 'h2.txt' into table emp2;
+
+select * from emp;
+it will show all data from both h1.txt and h2.txt files
+load data local inpath 'h3.txt' overwrite into table emp2; **(delete existing files and load h3.txt)
+
+**Load data from hive table into local dir:--
+sudo hive -e "insert overwrite local directory '/home/cloudera/Desktop/mydb' select * from mydb.emp"
+[default delimiter is 001]
+
+**Drop table tablename;
+[Internal Table data will be deleted from HDFS and Metada from Derby db but in case of 
+External Table only Metada in Derby Db will be deleted]
+
+** Load file into hdfs
+hadoop dfs -put h3.txt /h3.txt
+
+** From hdfs load data of h3.txt into emp table
+hive>load data inpath '/h3.txt' into table emp;
+*** For managed table if it is loaded from hdfs then file will be moved 
+into warehouse/db/table dir.
+*** if we drop table then all files from warehouse/database/table dir 
+will be deleted in case of managed or internal table.
+
+*** Create an external table and load the data 
+a)from local file system
+hive>create external table emp2(name string,sal float,dept string)
+    >row format delimited
+    >fields terminated by ','
+    >location '/hivenewlocation';
+*** in hivenewlocation all data will be stored not in warehouse.
+
+hive>load data local inpath 'h1.txt' into table emp2;
+
+
+hive>create external table emp3(name string,sal float,dept string)
+    >row format delimited
+    >fields terminated by ','
+    >location '/hivetest1';
+
+If files are already present in hivetest1 dir in hdfs then those data  will
+ become records of external table emp3
+
+**Partitioning table
+
+create table emp6(eno int,name string, sal float,dept string)
+>partitioned by(country string,state string)
+>row format delimited
+>fields terminated by ',';
+
+hive>describe emp6;
+hive>describe extended emp6;
+hive>load data local inpath 'e1.txt' into table emp6
+   >partition(country='INDIA',state='WB');
+
+   select * from emp6;
+** In Browser go to user-->hive-->warehouse-->dbname-->table-->parttion name
+** 
+select * from emp6 where state='WB';
+it will not use Map-Reduce to analyze the data in case of partioned table
+and its very  fast.
+
+**  Create table using cust and txn data sets
+
+create table txnrecords(txnno int,txndate string,custno int,amount double,category  string,product string,city string,state string,spendby string)
+row format delimited
+fields terminated by ','
+stored as textfile;
+
+***Load the data into table:--
+
+load data local inpath 'txn.txt' overwrite into table txnrecords;
+
+
+
+***Describe table--
+describe txnrecords
+
+** Counting no of records:--
+
+select count(*) from txnrecords;
+
+**Counting total spending by category of products:--
+
+create category, sum(amount) from txnrecords group by category;
+
+**For 10 Customers
+
+select custno,sum(amount)from txnrecords group by custno limit 10;
+

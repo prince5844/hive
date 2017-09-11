@@ -1,0 +1,136 @@
+
+
+
+
+create table mantab1(eid int,ename string,esal int)
+row format delimited 
+fields terminated by '|'
+lines terminated by  '\n'
+stored as textfile; 
+
+1.To see database location
+hadoop fs -ls /user/hive/warehouse
+2.To see files
+    hadoop fs -ls /user/hive/warehouse/iemdb.db
+
+3. hadoop fs -cat /user/hive/warehouse/iemdb.db
+
+4. load data local inpath '/home/cloudera/batch1/emp.txt'
+   into table mantab1; 
+   type (select *from  mantab1;)     
+
+Now check
+hadoop fs -ls /user/hive/warehouse/iemdb.db
+
+5.hadoop fs -cat /user/hive/warehouse/iemdb.db/mantab1/emp.txt
+
+6. use same load cammand
+    load data local inpath '/home/cloudera/batch1/emp.txt'
+   into table mantab1;
+ 
+   check what happens
+7.hadoop fs -ls /user/hive/warehouse/iemdb.db/mantab1
+ As per the hadoop ground rules we cannot copy the same file into the same directory multiple times.(hadoop framework rename the file name then copy it)
+
+8.
+ type 
+      select * from  mantab;
+9. HDFS mode
+create table dept (deptid int,eid int,dname string,dloc string)
+row format delimited                                           
+fields terminated by'|'                                       
+stored as textfile; 
+ 
+10. load data into HDFS
+hadoop dfs -put batch1/dept.txt /dept.txt
+11.load data into table
+   load data inpath '/dept.txt' into table dept;
+12. check data is available or not in HDFS
+    hadoop dfs -ls /
+13. check in warehouse location
+hadoop fs -ls /user/hive/warehouse/iemdb.db/dept
+
+14.drop mantab1;
+hadoop fs -ls /user/hive/warehouse/iemdb.db/
+
+15. show tables;
+
+  
+External Table
+16.
+create external table tabex(eid int,ename string,esal int)
+row format delimited 
+fields terminated by '|'
+lines terminated by  '\n'
+stored as textfile; 
+
+17. hadoop dfs -put batch1/emp.txt /emp.txt
+
+18. load data inpath '/emp.txt' into table tabex;
+19.hadoop fs -ls /user/hive/warehouse/iemdb1.db/tabex
+20. hadoop fs -ls /batch1
+
+Using location table
+
+21.hadoop fs -mkdir /HIVE/data
+
+create external table emp(eid int,ename string,esal int)
+row format delimited 
+fields terminated by '|'
+lines terminated by  '\n'
+stored as textfile location '/HIVE/data'; 
+
+22. hadoop fs -ls /HIVE/data  
+Load data (local mode)
+23.load data local inpath 'batch1/emp.txt' into table emp;
+24. now check
+ hadoop fs -ls /HIVE/data 
+
+
+25. create external table deptex (deptid int,eid int,dname string,dloc string)
+row format delimited                                           
+fields terminated by'|'                                       
+stored as textfile location '/HIVE/data';
+
+Alter the hive table
+  26. alter table dept RENAME to dept_new;
+
+add one extra column
+27. alter table dept_new ADD COLUMNS (ename string)
+28. desc dept_new
+LOAD modified file
+29. load data local inpath 'batch1/dept.txt' overwrite into table dept_new.
+
+30.create table as select(CTAS)
+    create table emp_new as select eid,ename from dept_new;
+31. create table empdept as select e.eid,e.ename,d.deptid,d.dname,d.dloc from emp_new e join dept_new d on(e.id=d.id);
+
+32. create table emp_country(eid int,ename string,esal int)
+      
+PARTITIONED BY(ecountry string) 
+row format delimited
+fields terminated by '|'
+ stored as textfile; 
+
+LOAD DATA
+33. load data local inpath 'batch1/emp.txt' into table emp_country PARTITION(ecountry='INDIA')
+
+34.load data local inpath 'batch1/emp1.txt' into table emp_country PARTITION(ecountry='USA')
+
+35.  create table bucket1 (eid int,ename string,esal int)
+     CLUSTERED BY (eid) into 4 buckets 
+     row format delimited 
+     fields terminated by '|'
+     stored as textfile;
+
+
+
+36.create table collectman(compid int, compname struct<fullname: string,smallname: string>,compaddr struct <roadno:int,streename:string,city:string,state:string>,
+prev_rev array<int>,groth_pref map<string,boolean>)
+row format delimited
+fields terminated by '|'
+collection items terminated by ','
+map keys terminated by ':'
+stored as textfile; 
+
+37. load data local inpath 'batch1/compdata' overwrite into table collectman; 

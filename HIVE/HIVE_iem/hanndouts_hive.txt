@@ -1,0 +1,5 @@
+1.show databases;
+2. create database iemdb
+3. use iemdb
+4. show tables
+5.

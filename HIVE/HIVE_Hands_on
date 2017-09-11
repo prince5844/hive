@@ -1,0 +1,225 @@
+1.Creating database
+......................................
+  create database tempdb;
+.......................................
+2. Viewing a database
+.......................................
+   show databases;
+.......................................
+3. Use database
+......................................
+  use tempdb;
+...................................
+4. Creating managed table
+.........................................
+create table mantab1(eid int,ename string,esal int)
+row format delimited 
+fields terminated by '|'
+lines terminated by  '\n'
+stored as textfile; 
+...................................................
+5. Load data into table in local mode.( i.e. LFS to table )  
+...................................................
+ 
+  (i) create a file 'emp.txt' in home folder
+ 
+        1|ename1|30000
+        2|ename2|40000
+        3|ename3|50000
+        4|ename4|60000
+
+        
+   (ii)
+    load data local inpath 'emp.txt' into table mantab1;
+.. ........................................................
+6. To see database and table, type in terminal
+..................................................
+  hadoop fs -ls /user/hive/warehouse/tempdb.db/mantab1/
+........................................................
+7.use same load cammand
+.......................................................
+load data local inpath 'emp.txt' into table mantab1;
+.......................................................
+8. Type the following command in terminal
+  hadoop fs -ls /user/hive/warehouse/tempdb.db/mantab1
+
+  -rw-r--r--   1 root supergroup         46 2016-12-19 16:17 /user/hive/warehouse/tempdb.db/mantab1/emp.txt
+
+-rw-r--r--   1 root supergroup         46 2016-12-19 16:18 /user/hive/warehouse/tempdb.db/mantab1/emp.txt_copy_1
+
+ As per the hadoop ground rules we cannot copy the same file into the same directory multiple times.(hadoop framework rename the file name then copy it)
+..............................................................
+9. HDFS Mode(loadin data from HDFS to hive table)
+...........................................................
+create table dept (deptid int,eid int,dname string,dloc string)
+row format delimited                                           
+fields terminated by'|'                                       
+stored as textfile; 
+.........................................................
+10. create dept.txt in home folder
+10101|100|it|hyd
+10102|101|hr|kol
+10103|102|BPO|Mum
+10104|103|it|pune
+10105|104|hr|chn
+................................................
+11. copy dept.txt into HDFS
+  hadoop fs -put dept.txt /dept.txt
+..............................................
+12.Load data into table dept
+   load data inpath '/dept.txt' into table mantab1;
+...................................................
+13. check data is available or not in HDFS
+
+    hadoop dfs -ls /
+
+14. check in warehouse location
+hadoop fs -ls /user/hive/warehouse/tempdb.db/dept
+..................................................
+15.External table
+...................................................
+create external table tabex(eid int,ename string,esal int)
+row format delimited 
+fields terminated by '|'
+lines terminated by  '\n'
+stored as textfile; 
+.......................................................
+16. Load data into external table
+........................................
+ hadoop dfs -put emp.txt /emp.txt
+
+ load data inpath '/emp.txt' into table tabex;
+
+
+17.see the location of external table 
+.............................................
+hadoop fs -ls /user/hive/warehouse/tempdb.db/tabex
+18. Drop both external and managed tables, to know the difference between external and managed tables.
+................................................
+  (i) drop table mantab1;
+
+  (In this case both schema and data will delete)
+
+  (ii)drop table tabex; 
+
+   (In this case only schema will delete)
+
+.....................................................
+19.Creating table using location keyword
+.....................................................
+  (i). create location into HDFS
+      hadoop fs -mkdir /HIVE/data
+  (ii). create table
+
+ create external table emp(eid int,ename string,esal int)
+  row format delimited 
+  fields terminated by '|'
+  lines terminated by  '\n'
+  stored as textfile location '/HIVE/data';
+
+ .................................................
+20.load data (local load)
+load data local inpath 'emp.txt' into table emp;
+..................................................
+21.
+create external table dept (deptid int,eid int,dname string,dloc string)
+row format delimited                                           
+fields terminated by'|'                                       
+stored as textfile location '/HIVE/data';
+................................................
+22. 
+load data local inpath 'dept.txt' into table dept;
+....................................................
+23. Alter the hive table
+.....................................................
+ (i). Rename table name
+     alter table dept RENAME to dept_new;
+
+ (ii). add one extra column
+      alter table dept_new ADD COLUMNS (ename string)
+24. Modify dept.txt
+10101|100|it|hyd|ename1
+10102|101|hr|kol|ename2
+10103|102|BPO|Mum|ename3
+10104|103|it|pune|ename4
+10105|104|hr|chn|ename5
+
+  
+25. LOAD modified file
+load data local inpath 'dept.txt' overwrite into table dept_new.
+.............................................................
+26.create table as select(CTAS)
+
+create table emp_new as select eid,ename from dept_new;
+............................................................
+27. create table empdept as select e.eid,e.ename,d.deptid,d.dname,d.dloc from emp_new e join dept_new d on(e.id=d.id);
+.............................................................
+28.creating table of collection datatypes
+
+ (i) create file comp_data.txt
+1001|infosys pvt.ltd,infy|100,garf,hyd|80,75,85|good:true,bad:false
+1002|wipro pvt.ltd,wip|100,garf,hyd1|80,72,81|good:true,bad:false
+...................................................
+ (ii) create table 
+
+
+create table collection_tab(compid int, compname struct<fullname: string,smallname: string>,compaddr struct <roadno:int,streename:string,city:string,state:string>,
+prev_rev array<int>,groth_pref map<string,boolean>)
+row format delimited
+fields terminated by '|'
+collection items terminated by ','
+map keys terminated by ':'
+stored as textfile; 
+........................................................
+(iii) load data into collection_tab table 
+
+ load data local inpath 'comp_data.txt' overwrite into table  collection_tab.
+...................................................
+29. Static Partition
+.........................................................
+create table emp_country(eid int,ename string,esal int)
+ PARTITIONED BY(ecountry string) 
+row format delimited
+fields terminated by '|'
+ stored as textfile; 
+............................................................
+30. load data
+..........................................
+load data local inpath 'emp.txt' into table emp_country PARTITION(ecountry='INDIA')
+
+load data local inpath 'emp1.txt' into table emp_country PARTITION(ecountry='USA')
+............................................................. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
